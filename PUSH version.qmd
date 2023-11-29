@@ -10,6 +10,7 @@ library(lubridate)
 library(sf)
 library(dplyr)
 library(ggplot2)
+library(patchwork)
 ```
 
 
@@ -43,7 +44,7 @@ ggplot() +
 ## Administrative division data
 https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip
 
-This database give sus geospatial information of Bangladesh's administrative divisions.
+This database gives us geospatial information of Bangladesh's administrative divisions.
 ```{r}
 # Load the districts shapefile
 districts <- st_read("path to your download")
@@ -95,10 +96,10 @@ ggplot() +
 
 
 ```{r}
-# # Combining the refuge camps and district maps
+# Combining the refuge camps and district maps
 ggplot() +
   geom_sf(data = filtered_districts, aes(fill = ADM3_EN), color = "black") +
-  geom_sf(data = camp_outlines, aes(color = "yellow"), fill = NA) +
+  geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
   scale_fill_discrete(name = "Districts Name") +
   scale_color_manual(name = "Refugee camp outlines", values = "yellow")
 
@@ -107,10 +108,9 @@ ggplot() +
 Note: mapping all 3 things together is not possible because of overlapping data (water points and refugee camps)
 
 ## Function: maps for different districts
-
 ```{r}
 
-plot_filtered_district <- function(district_filter, water_point_filter, camp_outline_filter) {
+plot_filtered_district <- function(district_filter, layer, water_point_filter, camp_outline_filter, Title, Level) {
   # Apply filters to the district and water point data
   new_filtered_districts <- dplyr::filter(filtered_districts, district_filter)
   new_filtered_df <- dplyr::filter(filtered_df, water_point_filter)
@@ -118,26 +118,62 @@ plot_filtered_district <- function(district_filter, water_point_filter, camp_out
   
   # Plotting
   ggplot() +
-    geom_sf(data = new_filtered_districts, aes(fill = ADM3_EN), color = "black") +
-    geom_sf(data = new_filtered_camp_outlines, aes(color = "yellow"), fill = NA) +
+    geom_sf(data = new_filtered_districts, aes(fill = !!as.name(layer)), color = "black") +
     geom_sf(data = new_filtered_df, aes(color = status_clean)) +
     scale_color_manual(values = c("Functional" = "green", "Non-Functional, dry season" = "blue", "Non-Functional" = "orange")) +
-    scale_fill_discrete(name = "Districts Name") +
-    labs(fill = "Districts Name", color = "Water point Status")
+    geom_sf(data = new_filtered_camp_outlines, fill = "transparent", color = "yellow") +
+    scale_fill_discrete(name = Level) +
+    labs(
+      color = "Water point Status",
+      title = Title) +
+    theme_minimal()
   
 }
 
-# Example usage with filters
-Ukhia <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Ukhia", 
-                       water_point_filter = filtered_df$clean_adm3 == "Ukhia",
-                       camp_outline_filter = camp_outlines$Upazila == "Ukhia")
-plot(Ukhia)
-
-Teknarf <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Teknaf", 
-                                water_point_filter = filtered_df$clean_adm3 == "Teknaf",
-                                camp_outline_filter = camp_outlines$Upazila == "Teknaf")
-plot(Teknarf)
 
 ```
 
-We still need to disagregate further, since there is still almost full overlap between water points and refuge camps data. 
+### Plots for different districts
+```{r}
+Ukhia <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Ukhia",
+                                layer = "ADM3_EN",
+                                water_point_filter = filtered_df$clean_adm3 == "Ukhia",
+                                camp_outline_filter = camp_outlines$Upazila == "Ukhia",
+                                "Ukhia District",
+                                "District Name")
+
+
+Teknarf <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Teknaf",
+                                  layer = "ADM3_EN",
+                                  water_point_filter = filtered_df$clean_adm3 == "Teknaf",
+                                  camp_outline_filter = camp_outlines$Upazila == "Teknaf",
+                                  "Teknaf District",
+                                  "District Name")
+Ukhia + Teknarf
+```
+
+### Plots for different districts including sub district breakdown
+```{r}
+Ukhia <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Ukhia",
+                                layer = "ADM4_EN",
+                                water_point_filter = filtered_df$clean_adm3 == "Ukhia",
+                                camp_outline_filter = camp_outlines$Upazila == "Ukhia",
+                                "Ukhia District",
+                                "Sub-district name")
+
+Teknarf <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Teknaf",
+                                  layer = "ADM4_EN",
+                                  water_point_filter = filtered_df$clean_adm3 == "Teknaf",
+                                  camp_outline_filter = camp_outlines$Upazila == "Teknaf",
+                                  "Teknaf District",
+                                  "Sub-district name")
+
+Ukhia + Teknarf
+```
+
+We now need to dissagregate further, since there is still a lot of overlap between water points and refuge camps data. The sub districts I would prioritize visualizations for would be:
+
+In Ukhia: Palong Khali
+
+In Teknaf:  Whykong, Nhilla, Teknaf
+
