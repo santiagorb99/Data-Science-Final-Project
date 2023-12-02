@@ -1,0 +1,161 @@
+---
+title: "Data Science for Public Policy: Final Project "
+subtitle: "Geospatial and ML Characterization of Water Points in Cox's Bazaar Refugee Camp, Bangladesh"
+author: "Name - NetID"
+execute:
+  warning: false
+format:
+  html:
+    embed-resources: true
+---
+
+# Exploratory Data Analysis 
+
+```{r}
+library(haven)
+library(here)
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(ggplot2)
+library(kableExtra)
+library(readr)
+library(magrittr)
+library(sf)
+library(purrr)
+```
+```{r} 
+#Basedir 
+basedir = "C:/Users/kevin/Github/Data-Science-Final-Project/"
+
+``` 
+
+```{r}
+#| echo: false
+
+#Map the districts to start things off
+# Data Source for shapefiles: https://data.humdata.org/dataset/cod-ab-bgd? 
+
+districts <- st_read(paste0(basedir, "bgd_shp/bgd_admbnda_adm2_bbs_20201113.shp")) %>% 
+  filter(ADM2_EN == "Cox's Bazar")
+
+#Whole country
+ggplot() +
+  geom_sf(data = districts) +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Cox's Bazar District, Bangladesh") # Add the title
+
+```
+
+```{r}
+# CBPS Survey data (Basic needs module, round 1)
+
+survey_data <- read_dta(paste0(basedir,"cbps_tracking_r1_basicneeds.dta")) 
+
+# Create an sf object
+survey_sf <- st_as_sf(survey_data, coords = c("psu_longitude", "psu_latitude"), crs = 4326)
+
+# Plot the sf object
+survey_map <- ggplot() +
+  geom_sf(data = districts) +
+  geom_sf(data = survey_sf, size=0.5, alpha=0.5) +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Survey Data Distribution in Cox's Bazar, Bangladesh") # Add the title
+print(survey_map)
+
+ggsave(
+  paste0(basedir, "figures/survey-data_PSU-locations.png"),
+  plot = survey_map,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  units = 'in'
+)
+
+
+```
+
+```{r}
+# Load in Water Point data for BGD 
+water_data <- read_csv(paste0(basedir,"Water_Point_Data_Exchange__WPdx-Basic_.csv")) %>% 
+  filter(clean_adm2 == "Cox'S Bazar")
+
+# Create an sf object
+water_sf <- st_as_sf(water_data, coords = c("#lon_deg", "#lat_deg"), crs = 4326)
+
+# Plot the sf object
+water <- ggplot() +
+  geom_sf(data = districts) +
+  geom_sf(data = water_sf, size=0.02, alpha=0.5) +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Water Point Data in Cox's Bazar, Bangladesh") # Add the title
+print(water)
+
+ggsave(
+  paste0(basedir, "figures/EDA_water-points.png"),
+  plot = water,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  units = 'in'
+)
+
+```
+
+```{r}
+# Plotting Cox's Bazar base map + water point data + survey data on same map  
+
+map <- ggplot() +
+  geom_sf(data = districts) +
+  geom_sf(data = survey_sf, aes(color = "Survey PSUs (Primary Sampling Units)"), size = 0.5, alpha = 0.5) +
+  geom_sf(data = water_sf, aes(color = "Water Points"), size = 0.02, alpha = 0.5) +
+  scale_color_manual(values = c("Survey PSUs (Primary Sampling Units)" = "red", "Water Points" = "blue")) +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Survey Points & Water Points in Cox's Bazar, Bangladesh") +  # Add the title
+  labs(color = "Data Source")  # Customize legend title
+
+print(map)
+
+ggsave(
+  paste0(basedir, "figures/water-survey-map.png"),
+  plot = map,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  units = 'in'
+)
+
+```
+
+```{r}
+#| echo: false
+
+```
+
+```{r}
+#| echo: false
+
+```
+
+```{r}
+#| echo: false
+
+```
+
+```{r}
+#| echo: false
+
+```
+
+```{r}
+#| echo: false
+
+```
