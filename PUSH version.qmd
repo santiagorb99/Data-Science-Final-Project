@@ -177,3 +177,42 @@ In Ukhia: Palong Khali
 
 In Teknaf:  Whykong, Nhilla, Teknaf
 
+## Everyhting again for higher disagregation
+```{r}
+subdistrict_plots <- function(district_name) {
+
+# Filter the subdistrict data
+filtered_subdist <- districts %>%
+  filter(ADM4_EN == district_name)
+
+  filtered_subdist_water <- filtered_df %>%
+    filter(clean_adm4 == district_name)
+  
+  filtered_subdist_camps <- camp_outlines %>%
+    filter(Union == district_name)
+
+#Plot the subdistrict map:
+ggplot() +
+  geom_sf(data = filtered_subdist, aes(color = ADM4_EN))+
+  geom_sf(data = filtered_subdist_water, aes(color = status_clean)) +
+  scale_color_manual(values = c("Functional" = "green", "Non-Functional, dry season" = "blue", "Non-Functional" = "orange")) +
+  geom_sf(data = filtered_subdist_camps, fill = "transparent", color = "yellow") +
+  scale_fill_discrete(name = district_name) +
+    labs(
+      color = "Water point Status",
+      title = paste(district_name, "Sub-district")) +
+    theme_minimal()
+
+}
+
+Palong_Khali <- subdistrict_plots("Palong Khali")
+Whykong <- subdistrict_plots("Whykong")
+Nhilla <- subdistrict_plots("Nhilla")
+Teknaf <- subdistrict_plots("Teknaf")
+
+Palong_Khali
+Whykong
+Teknaf
+Nhilla
+```
+
