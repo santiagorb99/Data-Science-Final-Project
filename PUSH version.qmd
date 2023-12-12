@@ -44,7 +44,7 @@ ggplot() +
 ## Administrative division data
 https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip
 
-This database gives us geospatial information of Bangladesh's administrative divisions.
+This database gives us geospatial information of Bangladesh's administrative divisions. Use the bgd_admbnda_adm4_bbs_20201113.shp file in the folder.
 ```{r}
 # Load the districts shapefile
 districts <- st_read("path to your download")
@@ -60,9 +60,9 @@ ggplot() +
 ```
 
 ## Downloading refuge camp data
-https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip
+https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-cox-s-bazar-bangladesh?
 
-This data set gives us geographical information on refugee camps in Cox's Bazar, at different levels of detail.
+This data set gives us geographical information on refugee camps in Cox's Bazar, at different levels of detail. Use the 20230412_Camp Boundaries_A1, A2, A3.gdb file in the folder.
 ```{r}
 camp_data <- st_read("path to your download")
 
@@ -215,4 +215,45 @@ Whykong
 Teknaf
 Nhilla
 ```
+
+
+## https://drive.google.com/drive/folders/1wJR0QBXhE_PwWJDI-pDM3jcdjjB1S7zc
+
+This is the Tubewell Data from: https://rohingyaresponse.org/sectors/coxs-bazar/wash/
+
+``` {r}
+
+{r}
+suppressWarnings({
+
+tubewells <- read_excel("WASH_23.xlsx", sheet = 3) %>%
+  filter(`Type of Beneficiaries` == "Rohingya")
+
+colnames(tubewells)
+
+# Changing the names of the long and lat colums 
+tubewells$lat <- tubewells$"Latitude\r\n(Decimal Degrees)"
+tubewells$"Latitude\r\n(Decimal Degrees)" <- NULL 
+
+tubewells$long <- tubewells$"Longitude \r\n(Decimal Degrees)"
+tubewells$"Longitude \r\n(Decimal Degrees)" <- NULL 
+
+tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
+
+tubewell_map <- tubewells_sf %>%
+  group_by(Type of Facilities) %>%
+  ggplot() +
+  geom_sf(size=0.5, alpha=0.5) +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Tubewell Data in Cox's Bazar, Bangladesh") # Add the title
+
+print(tubewell_map)
+
+})
+
+
+```
+
 
