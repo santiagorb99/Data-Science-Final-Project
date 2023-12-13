@@ -11,8 +11,8 @@ library(sf)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
+library(readxl)
 ```
-
 
 
 ## Water point data
@@ -44,10 +44,10 @@ ggplot() +
 ## Administrative division data
 https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip
 
-This database gives us geospatial information of Bangladesh's administrative divisions.
+This database gives us geospatial information of Bangladesh's administrative divisions. Use the bgd_admbnda_adm4_bbs_20201113.shp file in the folder.
 ```{r}
 # Load the districts shapefile
-districts <- st_read("path to your download")
+districts <- st_read("bgd_adm_bbs_20201113_SHP/bgd_admbnda_adm4_bbs_20201113.shp")
 
 # Filter the data
 filtered_districts <- districts %>%
@@ -60,10 +60,11 @@ ggplot() +
 ```
 
 ## Downloading refuge camp data
-https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip
+https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-cox-s-bazar-bangladesh?
 
-This data set gives us geographical information on refugee camps in Cox's Bazar, at different levels of detail.
+This data set gives us geographical information on refugee camps in Cox's Bazar, at different levels of detail. Use the 20230412_Camp Boundaries_A1, A2, A3.gdb file in the folder.
 ```{r}
+
 camp_data <- st_read("path to your download")
 
 camp_layers <- st_layers(dsn = "path to your download")
@@ -77,6 +78,7 @@ plot(camp_block_outlines)
 
 camp_sub_block_outlines <- st_read("path to your download", "T20230412_A3_Camp_SubBlock_Outlines")
 plot(camp_sub_block_outlines)
+
 ```
 
 ## Combining the maps
@@ -177,3 +179,112 @@ In Ukhia: Palong Khali
 
 In Teknaf:  Whykong, Nhilla, Teknaf
 
+## Everyhting again for higher disagregation
+```{r}
+subdistrict_plots <- function(district_name) {
+
+# Filter the subdistrict data
+filtered_subdist <- districts %>%
+  filter(ADM4_EN == district_name)
+
+  filtered_subdist_water <- filtered_df %>%
+    filter(clean_adm4 == district_name)
+  
+  filtered_subdist_camps <- camp_outlines %>%
+    filter(Union == district_name)
+
+#Plot the subdistrict map:
+ggplot() +
+  geom_sf(data = filtered_subdist, aes(color = ADM4_EN))+
+  geom_sf(data = filtered_subdist_water, aes(color = status_clean)) +
+  scale_color_manual(values = c("Functional" = "green", "Non-Functional, dry season" = "blue", "Non-Functional" = "orange")) +
+  geom_sf(data = filtered_subdist_camps, fill = "transparent", color = "yellow") +
+  scale_fill_discrete(name = district_name) +
+    labs(
+      color = "Water point Status",
+      title = paste(district_name, "Sub-district")) +
+    theme_minimal()
+
+}
+
+Palong_Khali <- subdistrict_plots("Palong Khali")
+Whykong <- subdistrict_plots("Whykong")
+Nhilla <- subdistrict_plots("Nhilla")
+Teknaf <- subdistrict_plots("Teknaf")
+
+Palong_Khali
+Whykong
+Teknaf
+Nhilla
+```
+
+
+## https://drive.google.com/drive/folders/1wJR0QBXhE_PwWJDI-pDM3jcdjjB1S7zc
+
+This is the Tubewell Data from: https://rohingyaresponse.org/sectors/coxs-bazar/wash/
+
+``` {r}
+
+suppressWarnings({
+
+tubewells <- read_excel("WASH_23.xlsx", sheet = 3) %>%
+  filter(`Type of Beneficiaries` == "Rohingya")
+
+colnames(tubewells)
+
+# Changing the names of the long and lat colums 
+tubewells$lat <- tubewells$"Latitude\r\n(Decimal Degrees)"
+tubewells$"Latitude\r\n(Decimal Degrees)" <- NULL 
+
+tubewells$long <- tubewells$"Longitude \r\n(Decimal Degrees)"
+tubewells$"Longitude \r\n(Decimal Degrees)" <- NULL 
+
+tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
+
+tubewell_map <- tubewells_sf %>%
+  filter(`Type of Facilities` == "Handpump-Tubewell") %>%
+  ggplot() +
+  geom_sf(size=0.5, alpha=0.5) +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Tubewell Data in Cox's Bazar, Bangladesh") # Add the title
+
+print(tubewell_map)
+
+
+
+
+
+})
+
+
+```
+
+
+Link here: https://data.humdata.org/dataset/cox-s-bazar-refugee-settlement-health-facilities/resource/9aa4e102-73cb-4b77-be2d-c9560d6ee9db
+
+On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. 
+Data Sources: Cox Bazar Health Sector/WHO
+
+``` {r}
+
+health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
+
+health_facilities <- health_facilities[complete.cases(health_facilities$Long, health_facilities$Lat), ]
+
+health_sf <- st_as_sf(health_facilities, coords = c("Long", "Lat"), crs = 4326)
+	
+diarrhea <- health_sf %>%
+  filter(Type == "Diarrheal Treatment Center") %>%
+  ggplot() +
+  geom_sf() +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Diarrheal Treatment Center in Cox's Bazar, Bangladesh") # Add the title
+
+print(diarrhea)
+
+
+```
