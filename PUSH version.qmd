@@ -3,7 +3,7 @@ title: "Data Science Final"
 format: pdf
 ---
 ```{r, echo = FALSE}
-library("RSocrata")
+library(RSocrata)
 library(tidyverse)
 library(stringr)
 library(lubridate)
@@ -21,9 +21,9 @@ We download the data using a KPI. We then filter to keep data on Cox's Bazar exc
 #Downloading the data 
 df <- read.socrata(
   "https://data.waterpointdata.org/resource/eqje-vguj.json?country_id=BGD",
-  app_token = "your token",
-  email     = "email you signed up with",
-  password  = "your password"
+  app_token = "",
+  email     = "",
+  password  = ""
 )
 
 #Filtering the data
@@ -47,6 +47,7 @@ https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/0
 This database gives us geospatial information of Bangladesh's administrative divisions. Use the bgd_admbnda_adm4_bbs_20201113.shp file in the folder.
 ```{r}
 # Load the districts shapefile
+
 districts <- st_read("bgd_adm_bbs_20201113_SHP/bgd_admbnda_adm4_bbs_20201113.shp")
 
 # Filter the data
@@ -65,19 +66,79 @@ https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-
 This data set gives us geographical information on refugee camps in Cox's Bazar, at different levels of detail. Use the 20230412_Camp Boundaries_A1, A2, A3.gdb file in the folder.
 ```{r}
 
-camp_data <- st_read("path to your download")
+camp_data <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb")
 
-camp_layers <- st_layers(dsn = "path to your download")
+camp_layers <- st_layers(dsn = "20230412_Camp Boundaries_A1, A2, A3.gdb")
 camp_layers
 
-camp_outlines <- st_read("path to your download", "T20230412_A1_Camp_Outlines")
+camp_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A1_Camp_Outlines")
 plot(camp_outlines)
 
-camp_block_outlines <- st_read("path to your download", "T20230412_A2_Camp_Block_Outlines")
+camp_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A2_Camp_Block_Outlines")
 plot(camp_block_outlines)
 
-camp_sub_block_outlines <- st_read("path to your download", "T20230412_A3_Camp_SubBlock_Outlines")
+camp_sub_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A3_Camp_SubBlock_Outlines")
 plot(camp_sub_block_outlines)
+
+```
+
+# Please download the popluation data from below link first!!
+  https://data.unhcr.org/en/documents/details/105303
+
+```{r}
+# Read specific columns from the desired sheet in the Excel file
+refugee_data <- read_excel("UNHCR Population Factsheet  Block Level Data - November 2023.xlsx", range = "A6:H1000") %>%
+  select(`Block SSID`, `Total Individuals`)
+
+# Merge refugee_data with your_data based on 'Block SSID'
+merged_data <- camp_data %>%
+  left_join(refugee_data, by = c("BlockSSID" = "Block SSID"))
+
+# Filter camp_data to include only Camp district
+Ukhia_data <- merged_data[merged_data$CentroidY > 21.15, ]
+Teknaf_data <- merged_data[merged_data$CentroidY < 21, ]
+Ukhia_wp_data <- filtered_df[filtered_df$lat_deg > 21.15 & filtered_df$lat_deg < 21.23, ]
+Teknaf_wp_data <- filtered_df[filtered_df$lat_deg < 21 & filtered_df$lat_deg > 20.90, ]
+
+# Convert 'Total Individuals' to numeric for Ukhia
+Ukhia_data$`Total Individuals` <- as.numeric(Ukhia_data$`Total Individuals`)
+
+# Plotting for Ukhia
+ggplot() +
+  geom_sf(data = Ukhia_data, aes(fill = `Total Individuals`)) +
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen", na.value = "grey", name = "Population Density") +
+  theme_minimal() 
+
+# Plot the Ukhia Camp with Water point
+ggplot() +
+  geom_sf(data = Ukhia_data, aes(fill = `Total Individuals`)) +
+  scale_fill_gradient(low = "lightgreen", high = "darkgreen", na.value = "grey", name = "Population Density") +
+  theme_minimal() + 
+
+  geom_sf(data = Ukhia_wp_data, aes(color = status_clean), size = 0.1) +
+  scale_color_manual(values = c("Functional" = "yellow", "Non-Functional, dry season" = "orange", "Non-Functional" = "blue")) +
+  labs(fill = "CampName", color = "Water point Status") +
+  labs(title = "District Population Density Map")
+
+# Convert 'Total Individuals' to numeric for Teknaf
+Teknaf_data$`Total Individuals` <- as.numeric(Teknaf_data$`Total Individuals`)
+
+# Plotting for Teknaf
+ggplot() +
+  geom_sf(data = Teknaf_data, aes(fill = `Total Individuals`)) +
+  scale_fill_gradient(low = "lemonchiffon", high = "lemonchiffon4", na.value = "grey", name = "Population Density") +
+  theme_minimal()
+
+# Plot the Teknaf Camp with Water point
+ggplot() +
+  geom_sf(data = Teknaf_data, aes(fill = `Total Individuals`)) +
+  scale_fill_gradient(low = "lemonchiffon", high = "lemonchiffon4", na.value = "grey", name = "Population Density") +
+  theme_minimal() + 
+
+  geom_sf(data = Teknaf_wp_data, aes(color = status_clean), size = 0.1) +
+  scale_color_manual(values = c("Functional" = "green", "Non-Functional, dry season" = "orange", "Non-Functional" = "blue")) +
+  labs(fill = "CampName", color = "Water point Status")
+
 
 ```
 
@@ -228,6 +289,9 @@ This is the Tubewell Data from: https://rohingyaresponse.org/sectors/coxs-bazar/
 suppressWarnings({
 
 tubewells <- read_excel("WASH_23.xlsx", sheet = 3) %>%
+library(readxl)
+
+tubewells <- read_excel("C:/Genjuro/Georgetown_University/3_Fall_2023/Intro to Data Science/Group_Project/WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_2023.xlsx", sheet = 3) %>%
   filter(`Type of Beneficiaries` == "Rohingya")
 
 colnames(tubewells)
@@ -251,9 +315,6 @@ tubewell_map <- tubewells_sf %>%
   labs(title = "Tubewell Data in Cox's Bazar, Bangladesh") # Add the title
 
 print(tubewell_map)
-
-
-
 
 
 })
@@ -285,6 +346,5 @@ diarrhea <- health_sf %>%
   labs(title = "Diarrheal Treatment Center in Cox's Bazar, Bangladesh") # Add the title
 
 print(diarrhea)
-
 
 ```
