@@ -242,7 +242,7 @@ tubewells$"Longitude \r\n(Decimal Degrees)" <- NULL
 tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
 
 tubewell_map <- tubewells_sf %>%
-  group_by(`Type of Facilities`) %>%
+  filter(`Type of Facilities` == "Handpump-Tubewell") %>%
   ggplot() +
   geom_sf(size=0.5, alpha=0.5) +
   theme_minimal() +
