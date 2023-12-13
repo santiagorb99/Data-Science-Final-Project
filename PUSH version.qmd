@@ -242,7 +242,9 @@ tubewells$"Longitude \r\n(Decimal Degrees)" <- NULL
 tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
 
 tubewell_map <- tubewells_sf %>%
-  filter(`Type of Facilities` == "Handpump-Tubewell") %>%
+  filter(`Type of Facilities` == "Handpump-Tubewell") 
+
+
   ggplot() +
   geom_sf(size=0.5, alpha=0.5) +
   theme_minimal() +
@@ -252,7 +254,18 @@ tubewell_map <- tubewells_sf %>%
 
 print(tubewell_map)
 
+latrine_map <- tubewells_sf %>%
+  filter(`Type of Facilities` == "Latrine") 
+  
+  
+  ggplot() +
+  geom_sf(size=0.5, alpha=0.5) +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Latrine Data in Cox's Bazar, Bangladesh") # Add the title
 
+print(latrine_map)
 
 
 
@@ -276,15 +289,25 @@ health_facilities <- health_facilities[complete.cases(health_facilities$Long, he
 health_sf <- st_as_sf(health_facilities, coords = c("Long", "Lat"), crs = 4326)
 	
 diarrhea <- health_sf %>%
-  filter(Type == "Diarrheal Treatment Center") %>%
+  filter(Type == "Diarrheal Treatment Center")
+
+
   ggplot() +
-  geom_sf() +
+  geom_sf(data = ) +
   theme_minimal() +
   xlab("Longitude [degrees]") +  # Add x-axis label
   ylab("Latitude [degrees]") +  # Add y-axis label
   labs(title = "Diarrheal Treatment Center in Cox's Bazar, Bangladesh") # Add the title
 
 print(diarrhea)
+
+ggplot() +
+  geom_sf(data = diarrhea, color = "green") +
+  geom_sf(data = tubewell_map, color = "blue") +
+  geom_sf(data = )
+  xlab("Longitude [degrees]") + 
+  ylab("Latitude [degrees]") +   
+  labs(title = "Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh") 
 
 
 ```
