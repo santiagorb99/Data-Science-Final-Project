@@ -305,7 +305,8 @@ ggplot() +
   geom_sf(data = diarrhea, color = "green") +
   geom_sf(data = tubewell_map, color = "blue") +
   geom_sf(data = )
-  xlab("Longitude [degrees]") + 
+  xlab("Longitude [degrees]"q
+       ) + 
   ylab("Latitude [degrees]") +   
   labs(title = "Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh") 
 
