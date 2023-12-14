@@ -21,9 +21,9 @@ We download the data using a KPI. We then filter to keep data on Cox's Bazar exc
 #Downloading the data 
 df <- read.socrata(
   "https://data.waterpointdata.org/resource/eqje-vguj.json?country_id=BGD",
-  app_token = "",
-  email     = "",
-  password  = ""
+  app_token = "PjQJU7Ifj1RWCnOXDj8EZtswc",
+  email     = "kaf121@georgetown.edu",
+  password  = "El3vator!"
 )
 
 #Filtering the data
@@ -287,12 +287,9 @@ This is the Tubewell Data from: https://rohingyaresponse.org/sectors/coxs-bazar/
 
 ``` {r}
 
-suppressWarnings({
-
-tubewells <- read_excel("WASH_23.xlsx", sheet = 3) %>%
 library(readxl)
 
-tubewells <- read_excel("C:/Genjuro/Georgetown_University/3_Fall_2023/Intro to Data Science/Group_Project/WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_2023.xlsx", sheet = 3) %>%
+tubewells <- read_excel("WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_2023.xlsx", sheet = 3) %>%
   filter(`Type of Beneficiaries` == "Rohingya")
 
 colnames(tubewells)
@@ -324,7 +321,10 @@ latrine_map <- tubewells_sf %>%
   
 print(latrine_map)
 
+<<<<<<< HEAD
 })
+=======
+>>>>>>> b9010d39ec3b9afe422d4ff7dcbc4d8cc4a6bd24
 
 ```
 
@@ -347,6 +347,7 @@ diarrhea <- health_sf %>%
 
 print(diarrhea)
 
+<<<<<<< HEAD
 # Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
 
 ggplot() +
@@ -375,5 +376,57 @@ ggplot() +
   labs(title = "Tubewell & Latrine in Cox's Bazar, Bangladesh") 
   
   
+=======
+```
+
+
+
+```{r}
+#Load in household data from WB CBPS Tracking survey, round 1 
+# library(haven)
+# hhdata <- read_csv("cbps/cbps_tracking_r1_basic needs.csv") 
+
+wells <- tubewells_sf %>%
+  filter(`Type of Facilities`=="Handpump-Tubewell") 
+
+latrines <- tubewells_sf %>% 
+  filter(`Type of Facilities`=="lat")
+
+well_graph <- ggplot() +
+  geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
+  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
+  geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Tubewell Data in Cox's Bazar, Bangladesh") # Add the title
+
+print(well_graph)
+
+teknaf <- districts %>%
+  filter(ADM3_EN == "Teknaf")
+ukhia <- districts %>% 
+  filter(ADM3_EN == "Ukhia")
+
+# ggplot() + 
+#   geom_sf(data=teknaf)
+# 
+# ggplot() + 
+#   geom_sf(data=ukhia)
+
+#Plot all well data in Ukhia 
+well_graph2 <- ggplot() +
+  geom_sf(data = ukhia) + 
+  geom_sf(data = teknaf) + 
+  geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
+  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
+  geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Tubewell Data in Teknaf & Uhkia Sub-Districts (Upzilas), Bangladesh") # Add the title
+
+print(well_graph2)
+>>>>>>> b9010d39ec3b9afe422d4ff7dcbc4d8cc4a6bd24
 
 ```
