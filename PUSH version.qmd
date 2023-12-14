@@ -84,6 +84,9 @@ plot(camp_sub_block_outlines)
 ```
 
 # Please download the popluation data from below link first!!
+
+
+
   https://data.unhcr.org/en/documents/details/105303
 
 ```{r}
@@ -306,91 +309,11 @@ tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
 tubewell_map <- tubewells_sf %>%
   filter(`Type of Facilities` == "Handpump-Tubewell") 
 
-
-  ggplot() +
-  geom_sf(size=0.5, alpha=0.5) +
-  theme_minimal() +
-  xlab("Longitude [degrees]") +  # Add x-axis label
-  ylab("Latitude [degrees]") +  # Add y-axis label
-  labs(title = "Tubewell Data in Cox's Bazar, Bangladesh") # Add the title
-
-print(tubewell_map)
-
 latrine_map <- tubewells_sf %>%
   filter(`Type of Facilities` == "Latrine") 
   
 print(latrine_map)
 
-<<<<<<< HEAD
-})
-=======
->>>>>>> b9010d39ec3b9afe422d4ff7dcbc4d8cc4a6bd24
-
-```
-
-
-Link here: https://data.humdata.org/dataset/cox-s-bazar-refugee-settlement-health-facilities/resource/9aa4e102-73cb-4b77-be2d-c9560d6ee9db
-
-On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. 
-Data Sources: Cox Bazar Health Sector/WHO
-
-``` {r}
-
-health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
-
-health_facilities <- health_facilities[complete.cases(health_facilities$Long, health_facilities$Lat), ]
-
-health_sf <- st_as_sf(health_facilities, coords = c("Long", "Lat"), crs = 4326)
-	
-diarrhea <- health_sf %>%
-  filter(Type == "Diarrheal Treatment Center")
-
-print(diarrhea)
-
-<<<<<<< HEAD
-# Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
-
-ggplot() +
-  geom_sf(data = diarrhea, color = "green") +
-  geom_sf(data = tubewell_map, color = "blue") +
-  geom_sf(data = )
-  xlab("Longitude [degrees]"q
-       ) + 
-  ylab("Latitude [degrees]") +   
-  labs(title = "Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh") 
-
-  
-Ukhia_med_data <- filtered_df[filtered_df$lat_deg > 21.15 & filtered_df$lat_deg < 21.23, ]
-Teknaf_med_data <- filtered_df[filtered_df$lat_deg < 21 & filtered_df$lat_deg > 20.90, ]
-
-  
-# Latrine & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
-  
-ggplot() +
-  geom_sf(data = diarrhea, color = "green") +
-  geom_sf(data = latrine_map, color = "pink") +
-  geom_sf(data = tubewell_map, color = "blue") +
-  geom_sf(data = Teknaf_data) +
-  xlab("Longitude [degrees]") + 
-  ylab("Latitude [degrees]") +   
-  labs(title = "Tubewell & Latrine in Cox's Bazar, Bangladesh") 
-  
-  
-=======
-```
-
-
-
-```{r}
-#Load in household data from WB CBPS Tracking survey, round 1 
-# library(haven)
-# hhdata <- read_csv("cbps/cbps_tracking_r1_basic needs.csv") 
-
-wells <- tubewells_sf %>%
-  filter(`Type of Facilities`=="Handpump-Tubewell") 
-
-latrines <- tubewells_sf %>% 
-  filter(`Type of Facilities`=="lat")
 
 well_graph <- ggplot() +
   geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
@@ -427,6 +350,67 @@ well_graph2 <- ggplot() +
   labs(title = "Tubewell Data in Teknaf & Uhkia Sub-Districts (Upzilas), Bangladesh") # Add the title
 
 print(well_graph2)
->>>>>>> b9010d39ec3b9afe422d4ff7dcbc4d8cc4a6bd24
+
+
+
+
+
+})
+
+
+```
+
+
+Link here: https://data.humdata.org/dataset/cox-s-bazar-refugee-settlement-health-facilities/resource/9aa4e102-73cb-4b77-be2d-c9560d6ee9db
+
+On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. 
+Data Sources: Cox Bazar Health Sector/WHO
+
+``` {r}
+
+health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
+
+health_facilities <- health_facilities[complete.cases(health_facilities$Long, health_facilities$Lat), ]
+
+health_sf <- st_as_sf(health_facilities, coords = c("Long", "Lat"), crs = 4326)
+	
+diarrhea <- health_sf %>%
+  filter(Type == "Diarrheal Treatment Center")
+
+print(diarrhea)
+
+# Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
+
+ggplot() +
+  geom_sf(data = diarrhea, color = "green") +
+  geom_sf(data = tubewell_map, color = "blue") +
+  geom_sf(data = )
+  xlab("Longitude [degrees]"q
+       ) + 
+  ylab("Latitude [degrees]") +   
+  labs(title = "Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh") 
+
+  
+Ukhia_med_data <- filtered_df[filtered_df$lat_deg > 21.15 & filtered_df$lat_deg < 21.23, ]
+Teknaf_med_data <- filtered_df[filtered_df$lat_deg < 21 & filtered_df$lat_deg > 20.90, ]
+
+
+geom_sf(data = Teknaf_data) +
+  
+# Latrine & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
+  
+ggplot() +
+  geom_sf(data = diarrhea, color = "green") +
+  geom_sf(data = latrine_map, color = "pink", size=0.05, alpha=0.5) +
+  xlab("Longitude [degrees]") + 
+  ylab("Latitude [degrees]") +   
+  labs(title = "Tubewell & Latrine in Cox's Bazar, Bangladesh") 
+  
+
+```
+
+
+
+```{r}
 
 ```
