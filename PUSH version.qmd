@@ -16,7 +16,7 @@ library(readxl)
 
 
 ## Water point data
-We download the data using a KPI. We then filter to keep data on Cox's Bazar exclusively.
+The following code chunk uses an API call to download water point data for Bangladesh. The data comes from the Water Point Data Exchange (WPdx) project, which standardizes water point data collected by project stakeholders. The data is then filtered to only include water points in Cox's Bazar, and is later mapped and classified accoridng to the water point's status (Functional, Non-functional, and Non-functional during the dry season). 
 ```{r}
 #Downloading the data 
 df <- read.socrata(
@@ -31,23 +31,23 @@ filtered_df <- df %>%
   filter(!is.na(lat_deg), !is.na(lon_deg)) %>%
   filter(clean_adm2 == "Cox'S Bazar")
 
-
 filtered_df <- st_as_sf(filtered_df, coords = c("lon_deg", "lat_deg"), remove = FALSE) %>%
   st_set_crs(value = 4326)
 
 #Ploting the map:
 ggplot() +
-  geom_sf(data = filtered_df, aes(color = status_clean))
+  geom_sf(data = filtered_df, aes(color = status_clean)) +
+  labs(
+    color = "Water point status",
+    title = "Water point distribution across Cox's Bazar") +
+  theme_minimal()
 ```
 
 
 ## Administrative division data
-https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip
-
-This database gives us geospatial information of Bangladesh's administrative divisions. Use the bgd_admbnda_adm4_bbs_20201113.shp file in the folder.
+The following code chunk loads, filters and plots Subnational Administrative Boundaries for Bangladesh. The data comes from the Bangladesh Data Grid, maintained by The Humanitarian Data Exchange (HDX). The HDX is a USAID-funded and OCHE-run open data platform designed to facilitate sharing of data relevant to development and humanitarian contexts. The specified dataset is available [here](https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip), and must be downloaded prior to running the code. To ensure the code runs correctly, use the bgd_admbnda_adm4_bbs_20201113.shp file from the download folder.
 ```{r}
 # Load the districts shapefile
-
 districts <- st_read("bgd_adm_bbs_20201113_SHP/bgd_admbnda_adm4_bbs_20201113.shp")
 
 # Filter the data
@@ -56,36 +56,39 @@ filtered_districts <- districts %>%
 
 #Plot the map:
 ggplot() +
-  geom_sf(data = filtered_districts, aes(color = ADM3_EN))
-
+  geom_sf(data = filtered_districts, aes(color = ADM3_EN)) +
+  labs(
+    color = "Name of Upazila",
+    title = "Administrative sub-divisions (Upazilas) in Cox's Bazar") +
+  theme_minimal()
 ```
 
 ## Downloading refuge camp data
-https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-cox-s-bazar-bangladesh?
+The following code chunk loads and plots geographical boundaries for refugee camps in Cox's Bazar. The data also comes from the Bangladesh Data Grid maintained by HDX.The specified dataset is available [here](https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-cox-s-bazar-bangladesh?), and must be downloaded prior to running the code. The data is available at the camp level, the camp block level, and the camp sub-block level. To ensure the code runs correctly, use the 20230412_Camp Boundaries_A1, A2, A3.gdb file from the download folder.
 
-This data set gives us geographical information on refugee camps in Cox's Bazar, at different levels of detail. Use the 20230412_Camp Boundaries_A1, A2, A3.gdb file in the folder.
 ```{r}
 
 camp_data <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb")
 
 camp_layers <- st_layers(dsn = "20230412_Camp Boundaries_A1, A2, A3.gdb")
-camp_layers
 
 camp_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A1_Camp_Outlines")
-plot(camp_outlines)
 
 camp_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A2_Camp_Block_Outlines")
-  
-plot(camp_block_outlines)
 
 camp_sub_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A3_Camp_SubBlock_Outlines")
-plot(camp_sub_block_outlines)
+
+#Plot the map:
+ggplot() +
+  geom_sf(data = camp_outlines, aes(color = CampName)) +
+  labs(
+    color = "Camp Name",
+    title = "Refugee camps in Cox's Bazar") +
+  theme_minimal()
 
 ```
 
 # Please download the popluation data from below link first!!
-
-
 
   https://data.unhcr.org/en/documents/details/105303
 
@@ -163,7 +166,7 @@ ggplot() +
 ```
 
 ## Combining the maps
-
+The following code chunks combine previous visualizations, layering the water point data and refugee camp data over administrative divisions.
 ```{r}
 # Combining the water point and district divisions maps
 ggplot() +
@@ -173,8 +176,7 @@ ggplot() +
   geom_sf(data = filtered_df, aes(color = status_clean)) +
   scale_color_manual(values = c("Functional" = "green", "Non-Functional, dry season" = "blue", "Non-Functional" = "orange")) +
 
-  labs(fill = "Districts Name", color = "Water point Status")
-
+  labs(fill = "Upazila", color = "Water point Status", title = "Water point distribution across Cox's Bazar")
 ```
 
 
@@ -183,16 +185,17 @@ ggplot() +
 ggplot() +
   geom_sf(data = filtered_districts, aes(fill = ADM3_EN), color = "black") +
   geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
-  scale_fill_discrete(name = "Districts Name") +
-  scale_color_manual(name = "Refugee camp outlines", values = "yellow")
+  scale_fill_discrete(name = "Upazila") +
+  scale_color_manual(name = "Refugee camp outlines", values = "yellow") +
 
+  labs(title = "Refugee camp boundaries across Cox's Bazar")
 ```
 
-Note: mapping all 3 things together is not possible because of overlapping data (water points and refugee camps)
+Note: layering administrative divisions, water point location, and refuge camp boundaries in the same plot is not possible because of overlapping geographical coordinates.
 
 ## Function: maps for different districts
+The following code chunk contains a function that generates layered maps for water point data, refugee camp boundaries and administrative divisions. 
 ```{r}
-
 plot_filtered_district <- function(district_filter, layer, water_point_filter, camp_outline_filter, Title, Level) {
   # Apply filters to the district and water point data
   new_filtered_districts <- dplyr::filter(filtered_districts, district_filter)
@@ -210,61 +213,64 @@ plot_filtered_district <- function(district_filter, layer, water_point_filter, c
       color = "Water point Status",
       title = Title) +
     theme_minimal()
-  
 }
-
-
 ```
 
 ### Plots for different districts
+The following code chunk uses the function described above to generate maps for the Ukhia and Teknaf Upazilas, since these administrative regions are the ones that contain both refugee camps and water points. 
 ```{r}
 Ukhia <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Ukhia",
                                 layer = "ADM3_EN",
                                 water_point_filter = filtered_df$clean_adm3 == "Ukhia",
                                 camp_outline_filter = camp_outlines$Upazila == "Ukhia",
-                                "Ukhia District",
-                                "District Name")
+                                "Ukhia Upazila",
+                                "Upazila Name")
 
 
 Teknarf <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Teknaf",
                                   layer = "ADM3_EN",
                                   water_point_filter = filtered_df$clean_adm3 == "Teknaf",
                                   camp_outline_filter = camp_outlines$Upazila == "Teknaf",
-                                  "Teknaf District",
-                                  "District Name")
+                                  "Teknaf Upazila",
+                                  "Upazila Name")
 Ukhia + Teknarf
 ```
 
 ### Plots for different districts including sub district breakdown
+The following code chunk uses the same function as above but changes the layer argument to display further administrative sub-divisions. 
 ```{r}
 Ukhia <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Ukhia",
                                 layer = "ADM4_EN",
                                 water_point_filter = filtered_df$clean_adm3 == "Ukhia",
                                 camp_outline_filter = camp_outlines$Upazila == "Ukhia",
-                                "Ukhia District",
-                                "Sub-district name")
+                                "Ukhia Upazila",
+                                "Sub-division name")
 
 Teknarf <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Teknaf",
                                   layer = "ADM4_EN",
                                   water_point_filter = filtered_df$clean_adm3 == "Teknaf",
                                   camp_outline_filter = camp_outlines$Upazila == "Teknaf",
-                                  "Teknaf District",
-                                  "Sub-district name")
+                                  "Teknaf Upazila",
+                                  "Sub-division name")
 
 Ukhia + Teknarf
 ```
 
-We now need to dissagregate further, since there is still a lot of overlap between water points and refuge camps data. The sub districts I would prioritize visualizations for would be:
+Based on the maps above, it is clear that there is still a lot of overlap between water points and refuge camps data. Because of this, it is necessary to disaggregate further, at the sub district level. The sub districts that will be selected for further visualizations are:
 
 In Ukhia: Palong Khali
 
 In Teknaf:  Whykong, Nhilla, Teknaf
 
-## Everyhting again for higher disagregation
+These were selected because they are the sub-divisions with the largest presence of refugee camps and water points.
+
+
+## Repeating preivous steps with further geospatial disagregation
+The following code chunk contains a function that generates layered maps for water point data, refugee camp boundaries and administrative divisions at the sub-district level. The function is later used to generate plots for Palong Khali sub district located in Ukhia, and Whykong, Teknafm and Nhilla sub districts, located in Teknaf.
 ```{r}
 subdistrict_plots <- function(district_name) {
 
-# Filter the subdistrict data
+# Filter the sub district data
 filtered_subdist <- districts %>%
   filter(ADM4_EN == district_name)
 
@@ -274,7 +280,7 @@ filtered_subdist <- districts %>%
   filtered_subdist_camps <- camp_outlines %>%
     filter(Union == district_name)
 
-#Plot the subdistrict map:
+#Plot the sub district map:
 ggplot() +
   geom_sf(data = filtered_subdist, aes(color = ADM4_EN))+
   geom_sf(data = filtered_subdist_water, aes(color = status_clean)) +
@@ -297,136 +303,4 @@ Palong_Khali
 Whykong
 Teknaf
 Nhilla
-```
-
-
-## https://drive.google.com/drive/folders/1wJR0QBXhE_PwWJDI-pDM3jcdjjB1S7zc
-
-This is the Tubewell Data from: https://rohingyaresponse.org/sectors/coxs-bazar/wash/
-
-``` {r}
-
-library(readxl)
-
-tubewells <- read_excel("WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_2023.xlsx", sheet = 3) %>%
-  filter(`Type of Beneficiaries` == "Rohingya")
-
-colnames(tubewells)
-
-# Changing the names of the long and lat colums 
-tubewells$lat <- tubewells$"Latitude\r\n(Decimal Degrees)"
-tubewells$"Latitude\r\n(Decimal Degrees)" <- NULL 
-
-tubewells$long <- tubewells$"Longitude \r\n(Decimal Degrees)"
-tubewells$"Longitude \r\n(Decimal Degrees)" <- NULL 
-
-tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
-
-tubewell_map <- tubewells_sf %>%
-  filter(`Type of Facilities` == "Handpump-Tubewell") 
-
-latrine_map <- tubewells_sf %>%
-  filter(`Type of Facilities` == "Latrine") 
-  
-print(latrine_map)
-
-
-well_graph <- ggplot() +
-  geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
-  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
-  geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
-  theme_minimal() +
-  xlab("Longitude [degrees]") +  # Add x-axis label
-  ylab("Latitude [degrees]") +  # Add y-axis label
-  labs(title = "Tubewell Data in Cox's Bazar, Bangladesh") # Add the title
-
-print(well_graph)
-
-teknaf <- districts %>%
-  filter(ADM3_EN == "Teknaf")
-ukhia <- districts %>% 
-  filter(ADM3_EN == "Ukhia")
-
-# ggplot() + 
-#   geom_sf(data=teknaf)
-# 
-# ggplot() + 
-#   geom_sf(data=ukhia)
-
-#Plot all well data in Ukhia 
-well_graph2 <- ggplot() +
-  geom_sf(data = ukhia) + 
-  geom_sf(data = teknaf) + 
-  geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
-  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
-  geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
-  theme_minimal() +
-  xlab("Longitude [degrees]") +  # Add x-axis label
-  ylab("Latitude [degrees]") +  # Add y-axis label
-  labs(title = "Tubewell Data in Teknaf & Uhkia Sub-Districts (Upzilas), Bangladesh") # Add the title
-
-print(well_graph2)
-
-
-
-
-
-})
-
-
-```
-
-
-Link here: https://data.humdata.org/dataset/cox-s-bazar-refugee-settlement-health-facilities/resource/9aa4e102-73cb-4b77-be2d-c9560d6ee9db
-
-On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. 
-Data Sources: Cox Bazar Health Sector/WHO
-
-``` {r}
-
-health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
-
-health_facilities <- health_facilities[complete.cases(health_facilities$Long, health_facilities$Lat), ]
-
-health_sf <- st_as_sf(health_facilities, coords = c("Long", "Lat"), crs = 4326)
-	
-diarrhea <- health_sf %>%
-  filter(Type == "Diarrheal Treatment Center")
-
-print(diarrhea)
-
-# Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
-
-ggplot() +
-  geom_sf(data = diarrhea, color = "green") +
-  geom_sf(data = tubewell_map, color = "blue") +
-  geom_sf(data = )
-  xlab("Longitude [degrees]"q
-       ) + 
-  ylab("Latitude [degrees]") +   
-  labs(title = "Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh") 
-
-  
-Ukhia_med_data <- filtered_df[filtered_df$lat_deg > 21.15 & filtered_df$lat_deg < 21.23, ]
-Teknaf_med_data <- filtered_df[filtered_df$lat_deg < 21 & filtered_df$lat_deg > 20.90, ]
-
-
-geom_sf(data = Teknaf_data) +
-  
-# Latrine & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
-  
-ggplot() +
-  geom_sf(data = diarrhea, color = "green") +
-  geom_sf(data = latrine_map, color = "pink", size=0.05, alpha=0.5) +
-  xlab("Longitude [degrees]") + 
-  ylab("Latitude [degrees]") +   
-  labs(title = "Tubewell & Latrine in Cox's Bazar, Bangladesh") 
-  
-
-```
-
-
-
-```{r}
-
 ```
