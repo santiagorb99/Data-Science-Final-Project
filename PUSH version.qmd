@@ -138,6 +138,26 @@ ggplot() +
   geom_sf(data = Teknaf_wp_data, aes(color = status_clean), size = 0.1) +
   scale_color_manual(values = c("Functional" = "green", "Non-Functional, dry season" = "orange", "Non-Functional" = "blue")) +
   labs(fill = "CampName", color = "Water point Status")
+```
+
+```{r}
+#### Still working on Buffer #### 
+Teknaf_data <- Teknaf_data %>% 
+  st_transform(crs=3857)
+
+# Create points from camp centers
+camp_centers <- st_as_sf(Teknaf_data, coords = c("CentroidX", "CentroidY"))
+
+# Using the conversion factor to create the buffer around the camp center point
+camp_center_buffer <- st_buffer(camp_centers, dist = 100)
+
+# Visualize the buffers around the camp center point
+ggplot() +
+  geom_sf(data = Teknaf_data, aes(fill = `Total Individuals`)) +
+  geom_sf(data = camp_center_buffer, color = "red", fill = NA) +
+  scale_fill_gradient(low = "lemonchiffon", high = "lemonchiffon4", na.value = "grey", name = "Population Density") +
+  labs(x = "Longitude [degrees]", y = "Latitude [degrees]", title = "Water points within 100m of Camp centers") +
+  theme_minimal()
 
 
 ```
