@@ -161,10 +161,20 @@ Note: For more focused analysis, camp districts are manually divided cut by long
 #### Still working on Buffer #### 
 Teknaf_data <- Teknaf_data %>% 
   st_transform(crs=3857)
+
 # Create points from camp centers
-camp_centers <- st_as_sf(Teknaf_data, coords = c("CentroidX", "CentroidY"))
+camp_centers <- st_as_sf(Teknaf_data, coords = c("CentroidX", "CentroidY")) %>%
+  st_set_crs(value = 4326)
+
+# Inspect the resulting geometry type
+st_geometry_type(camp_centers)
+
 # Using the conversion factor to create the buffer around the camp center point
-camp_center_buffer <- st_buffer(camp_centers, dist = 100)
+camp_center_buffer <- st_buffer(
+  camp_centers,
+  dist = units::set_units (5, "m")
+)
+  
 # Visualize the buffers around the camp center point
 ggplot() +
   geom_sf(data = Teknaf_data, aes(fill = `Total Individuals`)) +
@@ -172,6 +182,7 @@ ggplot() +
   scale_fill_gradient(low = "lemonchiffon", high = "lemonchiffon4", na.value = "grey", name = "Population Density") +
   labs(x = "Longitude [degrees]", y = "Latitude [degrees]", title = "Water points within 100m of Camp centers") +
   theme_minimal()
+
 
 ```
 
@@ -313,4 +324,11 @@ Palong_Khali
 Whykong
 Teknaf
 Nhilla
+```
+
+
+``` {r}
+
+
+
 ```
