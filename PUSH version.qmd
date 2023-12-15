@@ -406,6 +406,7 @@ On January 2018, partners from the Cox Bazar Health Sector conducted a mapping e
 Data Sources: Cox Bazar Health Sector/WHO
 
 ``` {r}
+library(readxl)
 
 health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
 
