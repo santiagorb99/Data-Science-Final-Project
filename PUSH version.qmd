@@ -1,8 +1,110 @@
 ---
-title: "Data Science Final"
-format: pdf
+title: "Data Science Final: Exploring the geospatial distribution and accessibility of water points across Rohingya  refugee camps in Bangladesh"
+format: html
+Authors: Serenity Fan, Cristina Pirela, Santiago Rodriguez, Young-Ju Man
 ---
+
+# Background and Literature Review
+
+The effects of the genocide of the Rohingya Muslim people by the Myanmar military, as  exemplified by the mass exodus displacement of 700,000 Rohingya in 2017 from Myanmar's Rakhine state, persist to this day. Many Rohingya continue to live in refugee camps in adjacent Cox's Bazar, Bangladesh, in extremely crowded and unsanitary conditions. In humanitarian  contexts, a household's distance to the nearest clean/improved water source greatly affects  daily life, with respect to time spent collecting water, nutrition, health (incidence of water-borne  diseases such as cholera, diarrhea, etc.), female agency/power in the household, and the  incidence of gender-based violence (e.g. women/girls fetching water in poorly-lit areas).  
+
+Our motivating question is to understand access to water facilities in refugee camps in Cox's  Bazar, and to verify and assess the extent to which those facilities are satisfying UNHCR  guidelines. To do so, we will explore the geospatial distribution of water points across Rohingya  refugee camps in Bangladesh. This has implications for the targeting and provision of water and  sanitation services in humanitarian response.
+
+## Data Sources:
+
+### Water Point Data Exchange (WPDX): 
+
+Global repository of water points, including geographic coordinates. The database can be filtered by country, and our team has verified that it contains extensive data for Bangladesh: over 70,000 observations. The following code chunk uses an API call to download water point data for Bangladesh.
+
+```{r}
+
+#Downloading the WPDX
+df <- read.socrata(
+  "https://data.waterpointdata.org/resource/eqje-vguj.json?country_id=BGD",
+  app_token = "PjQJU7Ifj1RWCnOXDj8EZtswc",
+  email     = "kaf121@georgetown.edu",
+  password  = "El3vator!"
+)
+
+```
+
+## Administrative division data
+
+The following code chunk loads Subnational Administrative Boundaries for Bangladesh. The data comes from the Bangladesh Data Grid, maintained by The Humanitarian Data Exchange (HDX). The HDX is a USAID-funded and OCHE-run open data platform designed to facilitate sharing of data relevant to development and humanitarian contexts. The specified dataset is available [here](https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip), and must be downloaded prior to running the code. To ensure the code runs correctly, use the bgd_admbnda_adm4_bbs_20201113.shp file from the download folder.
+
+```{r}
+
+# Load the districts shapefile}
+
+districts <- st_read("bgd_adm_bbs_20201113_SHP/bgd_admbnda_adm4_bbs_20201113.shp")
+
+```
+
+## Downloading refuge camp data
+
+The following code chunk loads and plots geographical boundaries for refugee camps in Cox's Bazar. The data also comes from the Bangladesh Data Grid maintained by HDX.The specified dataset is available [here](https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-cox-s-bazar-bangladesh?), and must be downloaded prior to running the code. The data is available at the camp level, the camp block level, and the camp sub-block level. To ensure the code runs correctly, use the 20230412_Camp Boundaries_A1, A2, A3.gdb file from the download folder.
+
+```{r}
+
+camp_data <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb")
+
+camp_layers <- st_layers(dsn = "20230412_Camp Boundaries_A1, A2, A3.gdb")
+
+camp_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A1_Camp_Outlines")
+
+camp_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A2_Camp_Block_Outlines")
+
+camp_sub_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A3_Camp_SubBlock_Outlines")
+
+```
+
+
+# UNHCR Population Factsheet 
+
+Joint Government of Bangladesh - Block Level as of November 2023. 
+
+Please download the population data from below link first
+[here] (https://data.unhcr.org/en/documents/details/105303)
+
+```{r}
+
+# Read only necessary columns in the Excel file to merge population data matching with Block SSID column
+
+refugee_data <- read_excel("UNHCR Population Factsheet  Block Level Data - November 2023.xlsx", range = "A6:H1000") %>%
+  select(`Block SSID`, `Total Individuals`)
+
+```
+
+# Latrine, Bathing Cubicle and Tubewell Location Map and Dataset - May 2023  
+
+The following code chunk loads geographical points for Tubewells/Latrines/Bathing Cubicles for refugee camps in Cox's Bazar. The data comes from the Rohingya Refugee Response maintained by UNICEF.The specified dataset is available [here](https://drive.google.com/drive/folders/1wJR0QBXhE_PwWJDI-pDM3jcdjjB1S7zc), and must be downloaded prior to running the code. The data can be filtered by District, Camp Name, and Type of Beneficiaries. 
+
+```{r}
+
+tubewells <- read_excel("WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_2023.xlsx", sheet = 3) %>%
+  filter(`Type of Beneficiaries` == "Rohingya")
+
+```
+
+# Health Facility Data
+
+On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. Due to the highly dynamic nature of the situation, new health facilities are still being constructed and others removed. It is therefore important to note that this may not be comprehensive or truly representative of infrastructure at the time of publication. Also note that the spatial accuracy of this dataset is at best just under 5m, which can influence the analysis of infrastructure coverage. 
+
+Link [here](https://data.humdata.org/dataset/cox-s-bazar-refugee-settlement-health-facilities/resource/9aa4e102-73cb-4b77-be2d-c9560d6ee9db)
+Data Sources: Cox Bazar Health Sector/WHO
+
+```{r}
+
+health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
+
+```
+
+
+## Libraries
+
 ```{r, echo = FALSE}
+
+({suppressWarnings
 library(RSocrata)
 library(tidyverse)
 library(stringr)
@@ -12,19 +114,14 @@ library(dplyr)
 library(ggplot2)
 library(patchwork)
 library(readxl)
+})  
 ```
 
+## WPDX Cleaning
 
-## Water point data
-The following code chunk uses an API call to download water point data for Bangladesh. The data comes from the Water Point Data Exchange (WPdx) project, which standardizes water point data collected by project stakeholders. The data is then filtered to only include water points in Cox's Bazar, and is later mapped and classified accoridng to the water point's status (Functional, Non-functional, and Non-functional during the dry season). 
+The data is filtered to only include water points in Cox's Bazar, and is later mapped and classified according to the water point's status (Functional, Non-functional, and Non-functional during the dry season).
+
 ```{r}
-#Downloading the data 
-df <- read.socrata(
-  "https://data.waterpointdata.org/resource/eqje-vguj.json?country_id=BGD",
-  app_token = "PjQJU7Ifj1RWCnOXDj8EZtswc",
-  email     = "kaf121@georgetown.edu",
-  password  = "El3vator!"
-)
 
 #Filtering the data
 filtered_df <- df %>%
@@ -43,12 +140,11 @@ ggplot() +
   theme_minimal()
 ```
 
-
 ## Administrative division data
-The following code chunk loads, filters and plots Subnational Administrative Boundaries for Bangladesh. The data comes from the Bangladesh Data Grid, maintained by The Humanitarian Data Exchange (HDX). The HDX is a USAID-funded and OCHE-run open data platform designed to facilitate sharing of data relevant to development and humanitarian contexts. The specified dataset is available [here](https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip), and must be downloaded prior to running the code. To ensure the code runs correctly, use the bgd_admbnda_adm4_bbs_20201113.shp file from the download folder.
+
+The following code chunk filters and plots Subnational Administrative Boundaries for Bangladesh.
+
 ```{r}
-# Load the districts shapefile
-districts <- st_read("bgd_adm_bbs_20201113_SHP/bgd_admbnda_adm4_bbs_20201113.shp")
 
 # Filter the data
 filtered_districts <- districts %>%
@@ -63,20 +159,11 @@ ggplot() +
   theme_minimal()
 ```
 
-## Downloading refuge camp data
-The following code chunk loads and plots geographical boundaries for refugee camps in Cox's Bazar. The data also comes from the Bangladesh Data Grid maintained by HDX.The specified dataset is available [here](https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-cox-s-bazar-bangladesh?), and must be downloaded prior to running the code. The data is available at the camp level, the camp block level, and the camp sub-block level. To ensure the code runs correctly, use the 20230412_Camp Boundaries_A1, A2, A3.gdb file from the download folder.
+## Plotting Refuge Camp Data
+
+The following code chunk plots geographical boundaries for refugee camps in Cox's Bazar.
 
 ```{r}
-
-camp_data <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb")
-
-camp_layers <- st_layers(dsn = "20230412_Camp Boundaries_A1, A2, A3.gdb")
-
-camp_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A1_Camp_Outlines")
-
-camp_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A2_Camp_Block_Outlines")
-
-camp_sub_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T20230412_A3_Camp_SubBlock_Outlines")
 
 #Plot the map:
 ggplot() +
@@ -88,19 +175,11 @@ ggplot() +
 
 ```
 
-
 ## Focusing on specific camp regions (Ukhia and Teknaf)
-The following code chunks are mapping specific two camp areas to make better visualizations.
-Furthermore, incorporating refugee population with density, it made easy to see which camp block has more densed refugee population
+
+The following code chunks are mapping specific two camp areas to make better visualizations. Furthermore, incorporating refugee population with density, it made easy to see which camp block has more densed refugee population
 
 ```{r}
-
-# Please download the popluation data from below link first!!
-# https://data.unhcr.org/en/documents/details/105303
-
-# Read only necessary columns in the Excel file to merge population data matching with Block SSID column
-refugee_data <- read_excel("UNHCR Population Factsheet  Block Level Data - November 2023.xlsx", range = "A6:H1000") %>%
-  select(`Block SSID`, `Total Individuals`)
 
 # Merge population with existing camp district data based on 'Block SSID'
 merged_data <- camp_data %>%
@@ -154,9 +233,11 @@ ggplot() +
   labs(fill = "CampName", color = "Water point Status") +
   labs(title = "Teknaf District Population Density Map with water points")
 ```
+
 Note: For more focused analysis, camp districts are manually divided cut by longitude and latitude
 
 # Still working on Buffer
+
 ```{r}
 #### Still working on Buffer #### 
 Teknaf_data <- Teknaf_data %>% 
@@ -187,7 +268,9 @@ ggplot() +
 ```
 
 ## Combining the maps
+
 The following code chunks combine previous visualizations, layering the water point data and refugee camp data over administrative divisions.
+
 ```{r}
 # Combining the water point and district divisions maps
 ggplot() +
@@ -199,7 +282,6 @@ ggplot() +
 
   labs(fill = "Upazila", color = "Water point Status", title = "Water point distribution across Cox's Bazar")
 ```
-
 
 ```{r}
 # Combining the refuge camps and district maps
@@ -215,7 +297,9 @@ ggplot() +
 Note: layering administrative divisions, water point location, and refuge camp boundaries in the same plot is not possible because of overlapping geographical coordinates.
 
 ## Function: maps for different districts
-The following code chunk contains a function that generates layered maps for water point data, refugee camp boundaries and administrative divisions. 
+
+The following code chunk contains a function that generates layered maps for water point data, refugee camp boundaries and administrative divisions.
+
 ```{r}
 plot_filtered_district <- function(district_filter, layer, water_point_filter, camp_outline_filter, Title, Level) {
   # Apply filters to the district and water point data
@@ -238,7 +322,9 @@ plot_filtered_district <- function(district_filter, layer, water_point_filter, c
 ```
 
 ### Plots for different districts
-The following code chunk uses the function described above to generate maps for the Ukhia and Teknaf Upazilas, since these administrative regions are the ones that contain both refugee camps and water points. 
+
+The following code chunk uses the function described above to generate maps for the Ukhia and Teknaf Upazilas, since these administrative regions are the ones that contain both refugee camps and water points.
+
 ```{r}
 Ukhia <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Ukhia",
                                 layer = "ADM3_EN",
@@ -258,7 +344,9 @@ Ukhia + Teknarf
 ```
 
 ### Plots for different districts including sub district breakdown
-The following code chunk uses the same function as above but changes the layer argument to display further administrative sub-divisions. 
+
+The following code chunk uses the same function as above but changes the layer argument to display further administrative sub-divisions.
+
 ```{r}
 Ukhia <- plot_filtered_district(district_filter = filtered_districts$ADM3_EN == "Ukhia",
                                 layer = "ADM4_EN",
@@ -281,13 +369,14 @@ Based on the maps above, it is clear that there is still a lot of overlap betwee
 
 In Ukhia: Palong Khali
 
-In Teknaf:  Whykong, Nhilla, Teknaf
+In Teknaf: Whykong, Nhilla, Teknaf
 
 These were selected because they are the sub-divisions with the largest presence of refugee camps and water points.
 
-
 ## Repeating preivous steps with further geospatial disagregation
+
 The following code chunk contains a function that generates layered maps for water point data, refugee camp boundaries and administrative divisions at the sub-district level. The function is later used to generate plots for Palong Khali sub district located in Ukhia, and Whykong, Teknafm and Nhilla sub districts, located in Teknaf.
+
 ```{r}
 subdistrict_plots <- function(district_name) {
 
@@ -326,16 +415,10 @@ Teknaf
 Nhilla
 ```
 
+## WASH Dataset
 
-## https://drive.google.com/drive/folders/1wJR0QBXhE_PwWJDI-pDM3jcdjjB1S7zc
+```{r}
 
-This is the Tubewell Data from: https://rohingyaresponse.org/sectors/coxs-bazar/wash/
-``` {r}
-
-library(readxl)
-
-tubewells <- read_excel("WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_2023.xlsx", sheet = 3) %>%
-  filter(`Type of Beneficiaries` == "Rohingya")
 
 colnames(tubewells)
 
@@ -394,18 +477,11 @@ well_graph2 <- ggplot() +
 print(well_graph2)
 
 
-})
 
 
 ```
 
-
-
-## Health Facilities (Cristina) 
-Link here: https://data.humdata.org/dataset/cox-s-bazar-refugee-settlement-health-facilities/resource/9aa4e102-73cb-4b77-be2d-c9560d6ee9db
-
-On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. 
-Data Sources: Cox Bazar Health Sector/WHO
+## Health Facilities 
 
 
 We calculate around 10 wells per Diarrhea Center (We do this by dividing the number of observations within the diarrhea_water_joined (153) df by the number of diarrhea centers (15)
@@ -416,15 +492,11 @@ We calculate around 17 wells within 100 meters of each Labor Room Center
 
 We calculate around 25 wells within 100 meter of each Health Post
 
-``` {r}
-
-health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
+```{r}
 
 health_facilities <- health_facilities[complete.cases(health_facilities$Long, health_facilities$Lat), ]
 
 health_sf <- st_as_sf(health_facilities, coords = c("Long", "Lat"), crs = 4326)
-	
-
 
 # Tubewells per Diarrhea Centers
 diarrhea <- health_sf %>%
@@ -484,7 +556,6 @@ labor_water_joined <- st_join(
      join = st_intersects
 )
    
-
    
 # Tubewells per Health Posts (fixed)
 
@@ -538,10 +609,6 @@ ggplot() +
   ylab("Latitude [degrees]") +   
   labs(title = "Tubewell & Latrine in Cox's Bazar, Bangladesh") 
 
-
-
-
   
 
 ```
-
