@@ -327,8 +327,221 @@ Nhilla
 ```
 
 
+## https://drive.google.com/drive/folders/1wJR0QBXhE_PwWJDI-pDM3jcdjjB1S7zc
+
+This is the Tubewell Data from: https://rohingyaresponse.org/sectors/coxs-bazar/wash/
 ``` {r}
 
+library(readxl)
+
+tubewells <- read_excel("WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_2023.xlsx", sheet = 3) %>%
+  filter(`Type of Beneficiaries` == "Rohingya")
+
+colnames(tubewells)
+
+# Changing the names of the long and lat colums 
+tubewells$lat <- tubewells$"Latitude\r\n(Decimal Degrees)"
+tubewells$"Latitude\r\n(Decimal Degrees)" <- NULL 
+
+tubewells$long <- tubewells$"Longitude \r\n(Decimal Degrees)"
+tubewells$"Longitude \r\n(Decimal Degrees)" <- NULL 
+
+tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
+
+tubewell_map <- tubewells_sf %>%
+  filter(`Type of Facilities` == "Handpump-Tubewell") 
+
+latrine_map <- tubewells_sf %>%
+  filter(`Type of Facilities` == "Latrine") 
+  
+print(latrine_map)
+
+
+well_graph <- ggplot() +
+  geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
+  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
+  geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Tubewell Data in Cox's Bazar, Bangladesh") # Add the title
+
+print(well_graph)
+
+teknaf <- districts %>%
+  filter(ADM3_EN == "Teknaf")
+ukhia <- districts %>% 
+  filter(ADM3_EN == "Ukhia")
+
+# ggplot() + 
+#   geom_sf(data=teknaf)
+# 
+# ggplot() + 
+#   geom_sf(data=ukhia)
+
+#Plot all well data in Ukhia 
+well_graph2 <- ggplot() +
+  geom_sf(data = ukhia) + 
+  geom_sf(data = teknaf) + 
+  geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
+  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
+  geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
+  theme_minimal() +
+  xlab("Longitude [degrees]") +  # Add x-axis label
+  ylab("Latitude [degrees]") +  # Add y-axis label
+  labs(title = "Tubewell Data in Teknaf & Uhkia Sub-Districts (Upzilas), Bangladesh") # Add the title
+
+print(well_graph2)
+
+
+})
 
 
 ```
+
+
+
+## Health Facilities (Cristina) 
+Link here: https://data.humdata.org/dataset/cox-s-bazar-refugee-settlement-health-facilities/resource/9aa4e102-73cb-4b77-be2d-c9560d6ee9db
+
+On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. 
+Data Sources: Cox Bazar Health Sector/WHO
+
+
+We calculate around 10 wells per Diarrhea Center (We do this by dividing the number of observations within the diarrhea_water_joined (153) df by the number of diarrhea centers (15)
+
+We calculate around 22 wells within 100 meters of each Primary Health Center
+
+We calculate around 17 wells within 100 meters of each Labor Room Center
+
+We calculate around 25 wells within 100 meter of each Health Post
+
+``` {r}
+
+health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_2018.xlsx", sheet = 2)
+
+health_facilities <- health_facilities[complete.cases(health_facilities$Long, health_facilities$Lat), ]
+
+health_sf <- st_as_sf(health_facilities, coords = c("Long", "Lat"), crs = 4326)
+	
+
+
+# Tubewells per Diarrhea Centers
+diarrhea <- health_sf %>%
+  filter(Type == "Diarrheal Treatment Center")
+
+print(diarrhea)
+
+# Using the conversion factor to create the buffer around the camp center point
+diarrhea_buffer <- st_buffer(
+  diarrhea,
+  dist = units::set_units (100, "m")
+)
+
+# spatial join the unbuffered shapes to the buffer shapes
+   diarrhea_water_joined <- st_join(
+     diarrhea_buffer,
+     tubewell_map,
+     join = st_intersects
+)
+   
+# Tubewells per Primary Health Center
+   
+primary_center <- health_sf %>%
+  filter(Type == "Primary Health Center")
+
+print(primary_center)
+
+# Using the conversion factor to create the buffer around the camp center point
+primary_buffer <- st_buffer(
+  primary_center,
+  dist = units::set_units (100, "m")
+)
+
+# spatial join the unbuffered shapes to the buffer shapes
+   primary_water_joined <- st_join(
+     primary_buffer,
+     tubewell_map,
+     join = st_intersects
+)
+   
+   
+# Tubewells per Labour Room or SRH only
+
+labor_room <- health_sf %>%
+  filter(Type == "Labour Room or SRH only")
+
+# Using the conversion factor to create the buffer around the camp center point
+labor_buffer <- st_buffer(
+  labor_room,
+  dist = units::set_units (100, "m")
+)
+
+# spatial join the unbuffered shapes to the buffer shapes
+labor_water_joined <- st_join(
+     labor_buffer,
+     tubewell_map,
+     join = st_intersects
+)
+   
+
+   
+# Tubewells per Health Posts (fixed)
+
+health_post <- health_sf %>%
+  filter(Type == "Health Post (fixed)")
+
+# Using the conversion factor to create the buffer around the camp center point
+post_buffer <- st_buffer(
+  health_post,
+  dist = units::set_units (100, "m")
+)
+
+# spatial join the unbuffered shapes to the buffer shapes
+post_water_joined <- st_join(
+     post_buffer,
+     tubewell_map,
+     join = st_intersects
+)
+
+# Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
+
+ggplot() +
+  geom_sf(data = diarrhea_water_joined, aes(fill = 'Type')) +
+  geom_sf(data = diarrhea_water_joined, aes(color = 'Type_of_Facilities')) +
+  scale_color_manual(values = c("green", "blue")) +  # Set specific colors
+  xlab("Longitude [degrees]") + 
+  ylab("Latitude [degrees]") +   
+  labs(title = "Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh")
+
+
+ggplot() +
+  geom_sf(data = Teknaf_data, aes(fill = `Total Individuals`)) +
+  geom_sf(data = camp_center_buffer, color = "red", fill = NA) +
+  scale_fill_gradient(low = "lemonchiffon", high = "lemonchiffon4", na.value = "grey", name = "Population Density") +
+  labs(x = "Longitude [degrees]", y = "Latitude [degrees]", title = "Water points within 100m of Camp centers") +
+  theme_minimal()
+
+
+Ukhia_med_data <- filtered_df[filtered_df$lat_deg > 21.15 & filtered_df$lat_deg < 21.23, ]
+Teknaf_med_data <- filtered_df[filtered_df$lat_deg < 21 & filtered_df$lat_deg > 20.90, ]
+
+
+geom_sf(data = Teknaf_data) +
+  
+# Latrine & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
+  
+ggplot() +
+  geom_sf(data = diarrhea, color = "green") +
+  geom_sf(data = latrine_map, color = "pink", size=0.05, alpha=0.5) +
+  xlab("Longitude [degrees]") + 
+  ylab("Latitude [degrees]") +   
+  labs(title = "Tubewell & Latrine in Cox's Bazar, Bangladesh") 
+
+
+
+
+  
+
+```
+
