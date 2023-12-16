@@ -122,6 +122,7 @@ health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_
 ```
 
 
+
 ## WPDX Cleaning
 
 The data is filtered to only include water points in Cox's Bazar, and is later mapped and classified according to the water point's status (Functional, Non-functional, and Non-functional during the dry season).
@@ -605,3 +606,14 @@ filled.contour(density_wells, main = "2D Kernel Density Estimation - Wells", xla
 filled.contour(density_latrines, main = "2D Kernel Density Estimation - Latrines", xlab = "Longitude [degrees]", ylab = "Latitude [degrees]")
 
 ```
+
+
+# High-Level Discussion of Results 
+
+We see that, according to the WPDX data, most of the wells in the dataset are non-functional, while only a few are functional. Given the high proportion of the former, it seems possible that there is a data-entry issue. If not, however, it is alarming that so many wells are non-functional, and so funding for maintenance and training/capacity building should be policy priorities moving forward.In terms of the camps, our figures show that most of the refugee camps are concentrated in Teknaf and Ukhia subdistricts (also called upazilas). 
+
+Given this fact, we focus our analysis on specific camp regions within Ukhia and Teknaf sub-districts. Using UNHCR data as input, we see that population density varies from approximately 1000-15,000 people per kilometre-squared, at the sub-sub-district level (i.e. the next smallest administrative division within Ukhia sub-district). We see that Ukhia sub-district is filled with a very high density of wells - however, they are all non-functional. Similarly, the camps within Teknaf sub-district have a high population density ranging from ~2000-8000 people per kilometre-squared. We see that wells are not as densely distributed in these camps as in Ukhia; however, they are again all non-functional. 
+
+Overall, our project requires greater harmonization between different well datasets, such as merging the 2 well datasets employed. In addition, spatial clustering could have been employed, for instance to assign camps to wells, weighted by camp-level population density. We were also unable to find such, but spatial health data, e.g. showing geographic variation in prevalance of water-borne diseases, such as cholera, diarrhea, etc. would have been useful, would have allowed us to expand from mapping WASH access to exploration of the WASH-health causal pathways.
+
+
