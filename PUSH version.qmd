@@ -1,15 +1,36 @@
 ---
 title: "Data Science Final: Exploring the geospatial distribution and accessibility of water points across Rohingya  refugee camps in Bangladesh"
-format: html
-  embed-resources: true
-Authors: Serenity Fan, Cristina Pirela, Santiago Rodriguez, Young-Ju Man
+author: Serenity Fan, Cristina Pirela, Santiago Rodriguez, Young-Ju Man
+execute:
+  warning: false
+format: 
+  html:
+   embed-resources: true
 ---
 
 # Background and Literature Review
 
-The effects of the genocide of the Rohingya Muslim people by the Myanmar military, as  exemplified by the mass exodus displacement of 700,000 Rohingya in 2017 from Myanmar's Rakhine state, persist to this day. Many Rohingya continue to live in refugee camps in adjacent Cox's Bazar, Bangladesh, in extremely crowded and unsanitary conditions. In humanitarian  contexts, a household's distance to the nearest clean/improved water source greatly affects  daily life, with respect to time spent collecting water, nutrition, health (incidence of water-borne  diseases such as cholera, diarrhea, etc.), female agency/power in the household, and the  incidence of gender-based violence (e.g. women/girls fetching water in poorly-lit areas).  
+The effects of the genocide of the Rohingya Muslim people by the Myanmar military, as exemplified by the mass exodus displacement of 700,000 Rohingya in 2017 from Myanmar's Rakhine state, persist to this day. Many Rohingya continue to live in refugee camps in adjacent Cox's Bazar, Bangladesh, in extremely crowded and unsanitary conditions. In humanitarian contexts, a household's distance to the nearest clean/improved water source greatly affects daily life, with respect to time spent collecting water, nutrition, health (incidence of water-borne diseases such as cholera, diarrhea, etc.), female agency/power in the household, and the incidence of gender-based violence (e.g. women/girls fetching water in poorly-lit areas).
 
-Our motivating question is to understand access to water facilities in refugee camps in Cox's  Bazar, and to verify and assess the extent to which those facilities are satisfying UNHCR  guidelines. To do so, we will explore the geospatial distribution of water points across Rohingya  refugee camps in Bangladesh. This has implications for the targeting and provision of water and  sanitation services in humanitarian response.
+Our motivating question is to understand access to water facilities in refugee camps in Cox's Bazar, and to verify and assess the extent to which those facilities are satisfying UNHCR guidelines. To do so, we will explore the geospatial distribution of water points across Rohingya refugee camps in Bangladesh. This has implications for the targeting and provision of water and sanitation services in humanitarian response.
+
+## Libraries
+
+```{r, echo = FALSE}
+
+library(RSocrata)
+library(tidyverse)
+library(stringr)
+library(lubridate)
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(readxl)
+library(MASS)
+  
+```
+
 
 ## Data Sources:
 
@@ -100,23 +121,6 @@ health_facilities <- read_excel("cox_bazar_health_sector_infrastructure_january_
 
 ```
 
-
-## Libraries
-
-```{r, echo = FALSE}
-
-({suppressWarnings
-library(RSocrata)
-library(tidyverse)
-library(stringr)
-library(lubridate)
-library(sf)
-library(dplyr)
-library(ggplot2)
-library(patchwork)
-library(readxl)
-})  
-```
 
 ## WPDX Cleaning
 
@@ -235,38 +239,7 @@ ggplot() +
   labs(title = "Teknaf District Population Density Map with water points")
 ```
 
-Note: For more focused analysis, camp districts are manually divided cut by longitude and latitude
 
-# Still working on Buffer
-
-```{r}
-#### Still working on Buffer #### 
-Teknaf_data <- Teknaf_data %>% 
-  st_transform(crs=3857)
-
-# Create points from camp centers
-camp_centers <- st_as_sf(Teknaf_data, coords = c("CentroidX", "CentroidY")) %>%
-  st_set_crs(value = 4326)
-
-# Inspect the resulting geometry type
-st_geometry_type(camp_centers)
-
-# Using the conversion factor to create the buffer around the camp center point
-camp_center_buffer <- st_buffer(
-  camp_centers,
-  dist = units::set_units (5, "m")
-)
-  
-# Visualize the buffers around the camp center point
-ggplot() +
-  geom_sf(data = Teknaf_data, aes(fill = `Total Individuals`)) +
-  geom_sf(data = camp_center_buffer, color = "red", fill = NA) +
-  scale_fill_gradient(low = "lemonchiffon", high = "lemonchiffon4", na.value = "grey", name = "Population Density") +
-  labs(x = "Longitude [degrees]", y = "Latitude [degrees]", title = "Water points within 100m of Camp centers") +
-  theme_minimal()
-
-
-```
 
 ## Combining the maps
 
@@ -418,6 +391,9 @@ Nhilla
 
 ## WASH Dataset
 
+The below code take the Tubewell data and renames the long and lat variables because they were called complicated names. It then filters the data by hand-pups and latrines and creates two plots to show where the tubewells are against the camp data and where the ukhia and teknaf are against the camp outlines.
+
+
 ```{r}
 
 
@@ -432,9 +408,11 @@ tubewells$"Longitude \r\n(Decimal Degrees)" <- NULL
 
 tubewells_sf <- st_as_sf(tubewells, coords = c("long", "lat"), crs = 4326)
 
+# We only want to see handpumps
 tubewell_map <- tubewells_sf %>%
   filter(`Type of Facilities` == "Handpump-Tubewell") 
 
+# we only want to see latrines
 latrine_map <- tubewells_sf %>%
   filter(`Type of Facilities` == "Latrine") 
   
@@ -443,7 +421,7 @@ print(latrine_map)
 
 well_graph <- ggplot() +
   geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
-  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
+  geom_sf(data = tubewells_sf, size=0.05, alpha=0.5, color = "blue") +
   geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
   theme_minimal() +
   xlab("Longitude [degrees]") +  # Add x-axis label
@@ -457,18 +435,13 @@ teknaf <- districts %>%
 ukhia <- districts %>% 
   filter(ADM3_EN == "Ukhia")
 
-# ggplot() + 
-#   geom_sf(data=teknaf)
-# 
-# ggplot() + 
-#   geom_sf(data=ukhia)
 
 #Plot all well data in Ukhia 
 well_graph2 <- ggplot() +
   geom_sf(data = ukhia) + 
   geom_sf(data = teknaf) + 
   geom_sf(data = filtered_df, size=0.05, alpha=0.5, color = "green") + 
-  geom_sf(data = wells, size=0.05, alpha=0.5, color = "blue") +
+  geom_sf(data = tubewells_sf, size=0.05, alpha=0.5, color = "blue") +
   geom_sf(data = camp_outlines, fill = "transparent", color = "yellow") +
   theme_minimal() +
   xlab("Longitude [degrees]") +  # Add x-axis label
@@ -478,19 +451,20 @@ well_graph2 <- ggplot() +
 print(well_graph2)
 
 
-
-
 ```
 
 ## Health Facilities 
 
-We calculate around 10 wells per Diarrhea Center (We do this by dividing the number of observations within the diarrhea_water_joined (153) df by the number of diarrhea centers (15)
+We construct buffers around four different types of health centers: Diarrhea Centers, Primary Health Centers, Labor Room Centers, and Health Posts. As we are interested in WASH access proximate to these centers (e.g. a 100 m radius), we use buffering. These data seem to indicate that there are many wells data within various health centers, however our previous wells data also indicate that many of these are non-functioning wells. 
 
-We calculate around 22 wells within 100 meters of each Primary Health Center
+We calculate around 10 wells per Diarrhea Center (We do this by dividing the number of observations within the diarrhea_water_joined (153) df by the number of diarrhea centers (15).
 
-We calculate around 17 wells within 100 meters of each Labor Room Center
+We calculate around 22 wells within 100 meters of each Primary Health Center.
 
-We calculate around 25 wells within 100 meter of each Health Post
+We calculate around 17 wells within 100 meters of each Labor Room Center.
+
+We calculate around 25 wells within 100 meter of each Health Post.
+
 
 ```{r}
 
@@ -585,20 +559,6 @@ ggplot() +
   ylab("Latitude [degrees]") +   
   labs(title = "Tubewell & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh")
 
-
-ggplot() +
-  geom_sf(data = Teknaf_data, aes(fill = `Total Individuals`)) +
-  geom_sf(data = camp_center_buffer, color = "red", fill = NA) +
-  scale_fill_gradient(low = "lemonchiffon", high = "lemonchiffon4", na.value = "grey", name = "Population Density") +
-  labs(x = "Longitude [degrees]", y = "Latitude [degrees]", title = "Water points within 100m of Camp centers") +
-  theme_minimal()
-
-
-Ukhia_med_data <- filtered_df[filtered_df$lat_deg > 21.15 & filtered_df$lat_deg < 21.23, ]
-Teknaf_med_data <- filtered_df[filtered_df$lat_deg < 21 & filtered_df$lat_deg > 20.90, ]
-
-
-geom_sf(data = Teknaf_data) +
   
 # Latrine & Diarrheal Treatment Centers in Cox's Bazar, Bangladesh
   
@@ -608,7 +568,40 @@ ggplot() +
   xlab("Longitude [degrees]") + 
   ylab("Latitude [degrees]") +   
   labs(title = "Tubewell & Latrine in Cox's Bazar, Bangladesh") 
-
   
+
+```
+
+
+## 2D Kernel Density Estimation 
+In addition to mapping wells and latrines and calculating various statistics as we have previously about the numbers of such within proximity to different types of health centers, we are also interested in creating 'heat maps' of the density of wells and latrines. We use the 2D Kernel Density Estimation (KDE) method to do this, resulting in maps below for wells and latrines, respctively. One note of caution is that while there is obvious (relative) variation in the KDE values over Ukhia and Teknaf sub-districts, the values of such are not easily interpretable in absolute terms. 
+
+```{r}
+
+
+wells <- tubewells_sf %>% 
+  filter(`Type of Facilities` == "Handpump-Tubewell")
+latrines <- tubewells_sf %>% 
+  filter(`Type of Facilities` == "Latrine")
+
+# Function to extract coordinates from the 'geometry' column of an sf object
+extract_coordinates <- function(sf_object) {
+  coords <- st_coordinates(sf_object)
+  data.frame(x = coords[, 1], y = coords[, 2])
+}
+
+# Extract coordinates from 'wells' and 'latrines'
+wells_coords <- extract_coordinates(wells)
+latrines_coords <- extract_coordinates(latrines)
+
+# Perform kernel density estimation for wells
+density_wells <- kde2d(wells_coords$x, wells_coords$y, n = 100)
+
+# Perform kernel density estimation for latrines
+density_latrines <- kde2d(latrines_coords$x, latrines_coords$y, n = 100)
+
+# Plot the kernel density estimates
+filled.contour(density_wells, main = "2D Kernel Density Estimation - Wells", xlab = "Longitude [degrees]", ylab = "Latitude [degrees]")
+filled.contour(density_latrines, main = "2D Kernel Density Estimation - Latrines", xlab = "Longitude [degrees]", ylab = "Latitude [degrees]")
 
 ```
