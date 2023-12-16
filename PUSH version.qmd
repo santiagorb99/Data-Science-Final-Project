@@ -1,6 +1,7 @@
 ---
 title: "Data Science Final: Exploring the geospatial distribution and accessibility of water points across Rohingya  refugee camps in Bangladesh"
 format: html
+  embed-resources: true
 Authors: Serenity Fan, Cristina Pirela, Santiago Rodriguez, Young-Ju Man
 ---
 
@@ -28,7 +29,7 @@ df <- read.socrata(
 
 ```
 
-## Administrative division data
+### Administrative division data
 
 The following code chunk loads Subnational Administrative Boundaries for Bangladesh. The data comes from the Bangladesh Data Grid, maintained by The Humanitarian Data Exchange (HDX). The HDX is a USAID-funded and OCHE-run open data platform designed to facilitate sharing of data relevant to development and humanitarian contexts. The specified dataset is available [here](https://data.humdata.org/dataset/401d3fae-4262-48c9-891f-461fd776d49b/resource/08736818-ae72-44a9-abd6-a51915c24921/download/bgd_adm_bbs_20201113_shp.zip), and must be downloaded prior to running the code. To ensure the code runs correctly, use the bgd_admbnda_adm4_bbs_20201113.shp file from the download folder.
 
@@ -40,7 +41,7 @@ districts <- st_read("bgd_adm_bbs_20201113_SHP/bgd_admbnda_adm4_bbs_20201113.shp
 
 ```
 
-## Downloading refuge camp data
+### Downloading refuge camp data
 
 The following code chunk loads and plots geographical boundaries for refugee camps in Cox's Bazar. The data also comes from the Bangladesh Data Grid maintained by HDX.The specified dataset is available [here](https://data.humdata.org/dataset/outline-of-camps-sites-of-rohingya-refugees-in-cox-s-bazar-bangladesh?), and must be downloaded prior to running the code. The data is available at the camp level, the camp block level, and the camp sub-block level. To ensure the code runs correctly, use the 20230412_Camp Boundaries_A1, A2, A3.gdb file from the download folder.
 
@@ -59,7 +60,7 @@ camp_sub_block_outlines <- st_read("20230412_Camp Boundaries_A1, A2, A3.gdb", "T
 ```
 
 
-# UNHCR Population Factsheet 
+### UNHCR Population Factsheet 
 
 Joint Government of Bangladesh - Block Level as of November 2023. 
 
@@ -75,7 +76,7 @@ refugee_data <- read_excel("UNHCR Population Factsheet  Block Level Data - Novem
 
 ```
 
-# Latrine, Bathing Cubicle and Tubewell Location Map and Dataset - May 2023  
+### Latrine, Bathing Cubicle and Tubewell Location Map and Dataset - May 2023  
 
 The following code chunk loads geographical points for Tubewells/Latrines/Bathing Cubicles for refugee camps in Cox's Bazar. The data comes from the Rohingya Refugee Response maintained by UNICEF.The specified dataset is available [here](https://drive.google.com/drive/folders/1wJR0QBXhE_PwWJDI-pDM3jcdjjB1S7zc), and must be downloaded prior to running the code. The data can be filtered by District, Camp Name, and Type of Beneficiaries. 
 
@@ -86,7 +87,7 @@ tubewells <- read_excel("WASH_Infrastructures_GPS dataset_(LT_TW_Bath)_May_01_20
 
 ```
 
-# Health Facility Data
+### Health Facility Data
 
 On January 2018, partners from the Cox Bazar Health Sector conducted a mapping exercise of the Health Facilities in the refugee camp areas. Due to the highly dynamic nature of the situation, new health facilities are still being constructed and others removed. It is therefore important to note that this may not be comprehensive or truly representative of infrastructure at the time of publication. Also note that the spatial accuracy of this dataset is at best just under 5m, which can influence the analysis of infrastructure coverage. 
 
@@ -483,7 +484,6 @@ print(well_graph2)
 
 ## Health Facilities 
 
-
 We calculate around 10 wells per Diarrhea Center (We do this by dividing the number of observations within the diarrhea_water_joined (153) df by the number of diarrhea centers (15)
 
 We calculate around 22 wells within 100 meters of each Primary Health Center
@@ -519,7 +519,7 @@ diarrhea_buffer <- st_buffer(
    
 # Tubewells per Primary Health Center
    
-primary_center <- health_sf %>%
+primary_center <- health_sf %>% 
   filter(Type == "Primary Health Center")
 
 print(primary_center)
